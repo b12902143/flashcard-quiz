@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字卡測驗 | Flashcard Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1200px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 96px;
+            margin-bottom: 20px;
+        }
+
+        .header p {
+            font-size: 40px;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .setup-screen, .quiz-screen, .results-screen {
+            display: none;
+        }
+
+        .setup-screen.active, .quiz-screen.active, .results-screen.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 16px;
+            font-weight: bold;
+            color: #333;
+            font-size: 40px;
+        }
+
+        textarea, input[type="number"] {
+            width: 100%;
+            padding: 24px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 40px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 36px 80px;
+            border-radius: 10px;
+            font-size: 48px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 32px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 72px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .card-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 60px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 60px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 112px;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .answer-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn-correct {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .btn-correct:hover {
+            box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+        }
+
+        .btn-wrong {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .btn-wrong:hover {
+            box-shadow: 0 5px 15px rgba(235, 51, 73, 0.4);
+        }
+
+        .btn-quit {
+            background: #6c757d;
+            grid-column: 1 / -1;
+        }
+
+        .results-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 24px;
+            margin-bottom: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 8px solid #ddd;
+            font-size: 36px;
+        }
+
+        .result-item.correct {
+            border-left-color: #56ab2f;
+        }
+
+        .result-item.wrong {
+            border-left-color: #eb3349;
+        }
+
+        .result-status {
+            font-weight: bold;
+        }
+
+        .result-status.correct {
+            color: #56ab2f;
+        }
+
+        .result-status.wrong {
+            color: #eb3349;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 36px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .summary-value {
+            font-size: 96px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .time-warning {
+            color: #eb3349;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hint {
+            font-size: 36px;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        h2 {
+            font-size: 72px;
+        }
+
+        h3 {
+            font-size: 48px;
+        }
+
+        /* 手機版響應式設計 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 36px;
+                margin-bottom: 10px;
+            }
+
+            .header p {
+                font-size: 18px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            label {
+                font-size: 18px;
+                margin-bottom: 8px;
+            }
+
+            textarea, input[type="number"] {
+                padding: 12px;
+                font-size: 16px;
+            }
+
+            textarea {
+                min-height: 120px;
+            }
+
+            .btn {
+                padding: 16px 32px;
+                font-size: 18px;
+            }
+
+            .stat-label {
+                font-size: 14px;
+                margin-bottom: 5px;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .stat-box {
+                padding: 10px;
+            }
+
+            .card-display {
+                padding: 40px 20px;
+                margin-bottom: 20px;
+                min-height: 200px;
+                font-size: 32px;
+            }
+
+            .answer-buttons {
+                gap: 10px;
+            }
+
+            .result-item {
+                padding: 12px;
+                margin-bottom: 8px;
+                font-size: 16px;
+            }
+
+            .summary-label {
+                font-size: 14px;
+                margin-bottom: 8px;
+            }
+
+            .summary-value {
+                font-size: 32px;
+            }
+
+            .summary-box {
+                padding: 12px;
+            }
+
+            .hint {
+                font-size: 14px;
+                margin-top: 10px;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+
+            h3 {
+                font-size: 20px;
+            }
+
+            .summary-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .results-list {
+                max-height: 300px;
+            }
+        }
+
+        /* 超小螢幕優化 */
+        @media (max-width: 480px) {
+            .stats {
+                gap: 8px;
+            }
+
+            .stat-box {
+                padding: 8px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+            }
+
+            .stat-value {
+                font-size: 20px;
+            }
+
+            .card-display {
+                font-size: 28px;
+                padding: 30px 15px;
+                min-height: 180px;
+            }
+
+            .answer-buttons {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 字卡測驗</h1>
+            <p>Flashcard Quiz</p>
+        </div>
+
+        <div class="content">
+            <!-- Setup Screen -->
+            <div class="setup-screen active">
+                <div class="form-group">
+                    <label>輸入字卡內容（每行一個）：</label>
+                    <textarea id="flashcardInput" placeholder="範例：&#10;遇見&#10;晴天&#10;十年&#10;溫柔"></textarea>
+                    <p class="hint">或者貼上你的歌曲列表</p>
+                </div>
+
+                <div class="form-group">
+                    <label>時間限制（秒，選填）：</label>
+                    <input type="number" id="timeLimit" placeholder="不填則無時間限制" min="1">
+                </div>
+
+                <button class="btn" onclick="startQuiz()">開始測驗</button>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div class="quiz-screen">
+                <div class="stats">
+                    <div class="stat-box">
+                        <div class="stat-label">題號</div>
+                        <div class="stat-value" id="questionNum">1/10</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">分數</div>
+                        <div class="stat-value" id="score">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">正確率</div>
+                        <div class="stat-value" id="accuracy">0%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">時間</div>
+                        <div class="stat-value" id="timer">0s</div>
+                    </div>
+                </div>
+
+                <div class="card-display" id="cardDisplay">
+                    載入中...
+                </div>
+
+                <div class="answer-buttons">
+                    <button class="btn btn-correct" onclick="answerQuestion(true)">✓ 答對</button>
+                    <button class="btn btn-wrong" onclick="answerQuestion(false)">✗ 答錯</button>
+                    <button class="btn btn-quit" onclick="quitQuiz()">結束測驗</button>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div class="results-screen">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #667eea;">測驗結果</h2>
+
+                <div class="summary-stats">
+                    <div class="summary-box">
+                        <div class="summary-label">總題數</div>
+                        <div class="summary-value" id="totalQuestions">0</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-label">答對</div>
+                        <div class="summary-value" style="color: #56ab2f;" id="correctCount">0</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-label">答錯</div>
+                        <div class="summary-value" style="color: #eb3349;" id="wrongCount">0</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-label">正確率</div>
+                        <div class="summary-value" id="finalAccuracy">0%</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-label">總時間</div>
+                        <div class="summary-value" id="totalTime">0s</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-label">平均每題</div>
+                        <div class="summary-value" id="avgTime">0s</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-bottom: 15px;">詳細結果：</h3>
+                <div class="results-list" id="resultsList"></div>
+
+                <button class="btn" onclick="resetQuiz()" style="margin-top: 30px;">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let flashcards = [];
+        let currentIndex = 0;
+        let score = 0;
+        let quizHistory = [];
+        let startTime = 0;
+        let timerInterval = null;
+        let timeLimit = null;
+
+        function startQuiz() {
+            const input = document.getElementById('flashcardInput').value.trim();
+            if (!input) {
+                alert('請輸入字卡內容！');
+                return;
+            }
+
+            flashcards = input.split('\n').filter(line => line.trim()).map(line => line.trim());
+
+            if (flashcards.length === 0) {
+                alert('沒有有效的字卡！');
+                return;
+            }
+
+            // Shuffle flashcards
+            flashcards = flashcards.sort(() => Math.random() - 0.5);
+
+            // Get time limit
+            const timeLimitInput = document.getElementById('timeLimit').value;
+            timeLimit = timeLimitInput ? parseInt(timeLimitInput) : null;
+
+            // Reset state
+            currentIndex = 0;
+            score = 0;
+            quizHistory = [];
+            startTime = Date.now();
+
+            // Show quiz screen
+            document.querySelector('.setup-screen').classList.remove('active');
+            document.querySelector('.quiz-screen').classList.add('active');
+
+            // Start timer
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 100);
+
+            // Display first card
+            displayCard();
+        }
+
+        function displayCard() {
+            if (currentIndex >= flashcards.length) {
+                endQuiz();
+                return;
+            }
+
+            const card = flashcards[currentIndex];
+            document.getElementById('cardDisplay').textContent = card;
+            updateStats();
+        }
+
+        function updateStats() {
+            const answeredQuestions = quizHistory.length;
+            document.getElementById('questionNum').textContent = `${currentIndex + 1}/${flashcards.length}`;
+            document.getElementById('score').textContent = score;
+
+            const accuracy = answeredQuestions > 0 ? (score / answeredQuestions * 100).toFixed(1) : 0;
+            document.getElementById('accuracy').textContent = accuracy + '%';
+        }
+
+        function updateTimer() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const timerElement = document.getElementById('timer');
+
+            if (timeLimit) {
+                const remaining = Math.max(0, timeLimit - elapsed);
+                timerElement.textContent = remaining.toFixed(1) + 's';
+
+                if (remaining <= 10) {
+                    timerElement.classList.add('time-warning');
+                }
+
+                if (remaining <= 0) {
+                    endQuiz('⏰ 時間到！');
+                }
+            } else {
+                timerElement.textContent = elapsed.toFixed(1) + 's';
+            }
+        }
+
+        function answerQuestion(isCorrect) {
+            const card = flashcards[currentIndex];
+            quizHistory.push({ card, isCorrect });
+
+            if (isCorrect) {
+                score++;
+            }
+
+            currentIndex++;
+            displayCard();
+        }
+
+        function quitQuiz() {
+            if (confirm('確定要結束測驗嗎？')) {
+                endQuiz();
+            }
+        }
+
+        function endQuiz(message) {
+            clearInterval(timerInterval);
+
+            const elapsed = (Date.now() - startTime) / 1000;
+            const totalQuestions = quizHistory.length;
+            const correctCount = score;
+            const wrongCount = totalQuestions - correctCount;
+            const accuracy = totalQuestions > 0 ? (correctCount / totalQuestions * 100).toFixed(1) : 0;
+            const avgTime = totalQuestions > 0 ? (elapsed / totalQuestions).toFixed(1) : 0;
+
+            // Update summary stats
+            document.getElementById('totalQuestions').textContent = totalQuestions;
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('wrongCount').textContent = wrongCount;
+            document.getElementById('finalAccuracy').textContent = accuracy + '%';
+            document.getElementById('totalTime').textContent = elapsed.toFixed(1) + 's';
+            document.getElementById('avgTime').textContent = avgTime + 's';
+
+            // Display detailed results
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '';
+
+            quizHistory.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = `result-item ${item.isCorrect ? 'correct' : 'wrong'}`;
+                div.innerHTML = `
+                    <span>${index + 1}. ${item.card}</span>
+                    <span class="result-status ${item.isCorrect ? 'correct' : 'wrong'}">
+                        ${item.isCorrect ? '✓ 答對' : '✗ 答錯'}
+                    </span>
+                `;
+                resultsList.appendChild(div);
+            });
+
+            // Show results screen
+            document.querySelector('.quiz-screen').classList.remove('active');
+            document.querySelector('.results-screen').classList.add('active');
+
+            if (message) {
+                alert(message);
+            }
+        }
+
+        function resetQuiz() {
+            document.querySelector('.results-screen').classList.remove('active');
+            document.querySelector('.setup-screen').classList.add('active');
+        }
+    </script>
+</body>
+</html>
